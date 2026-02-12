@@ -18,6 +18,10 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import com.google.android.material.navigation.NavigationView
+import androidx.appcompat.app.ActionBarDrawerToggle
 import app.vbt.hyperupnp.androidupnp.*
 import app.vbt.hyperupnp.databinding.ActivityMainBinding
 import app.vbt.hyperupnp.models.CustomListItem
@@ -36,6 +40,7 @@ class MainActivity : AppCompatActivity(), Callbacks,
     private var recyclerview: RecyclerView? = null
     private var swipeRefreshLayout: SwipeRefreshLayout? = null
     private var emptyIndicatorView: View? = null
+    private lateinit var drawerLayout: DrawerLayout
 
     private var mService: AndroidUpnpService? = null
 
@@ -118,7 +123,7 @@ class MainActivity : AppCompatActivity(), Callbacks,
         emptyIndicatorView = findViewById(R.id.looksempty)
         recyclerview?.layoutManager = GridLayoutManager(
             this,
-            PreferenceManager.getDefaultSharedPreferences(this).getInt("settings_grid_count", 2)
+            PreferenceManager.getDefaultSharedPreferences(this).getInt("settings_grid_count", 6)
         )
         mDeviceListAdapter = CustomListAdapter(mDeviceList,
             { c: CustomListItem -> navigateTo(c) }) { c: CustomListItem ->
@@ -143,13 +148,60 @@ class MainActivity : AppCompatActivity(), Callbacks,
         registerReceiver(receiver, filter)
         bindServiceConnection()
 
+
         swipeRefreshLayout = findViewById(R.id.swiperefresh)
         swipeRefreshLayout!!.setOnRefreshListener {
             if (mIsShowingDeviceList) refreshDevices() else refreshCurrent()
             swipeRefreshLayout!!.isRefreshing = false
         }
 
+        drawerLayout = findViewById(R.id.drawer_layout)
+        val navView: NavigationView = findViewById(R.id.nav_view)
+        val toggle = ActionBarDrawerToggle(
+            this, drawerLayout, binding.toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        )
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
 
+        drawerLayout.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerOpened(drawerView: View) {
+                navView.requestFocus()
+            }
+        })
+
+        navView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.action_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                }
+                R.id.action_quit -> {
+                    finishAffinity()
+                    exitProcess(0)
+                }
+                R.id.action_refresh -> {
+                    if (mIsShowingDeviceList) refreshDevices() else refreshCurrent()
+                }
+                R.id.action_shuffle -> {
+                    if (mIsShowingDeviceList) {
+                        mDeviceListAdapter.customListFilterList.shuffle()
+                        mDeviceListAdapter.notifyItemRangeRemoved(0, mDeviceList.size)
+                    } else {
+                        mItemListAdapter.customListFilterList.shuffle()
+                        mItemListAdapter.notifyItemRangeRemoved(0, mItemList.size)
+                    }
+                }
+                R.id.action_count_items -> {
+                    AlertDialog.Builder(this)
+                        .setTitle("Item Count")
+                        .setMessage("There are total ${if (mIsShowingDeviceList) mDeviceListAdapter.itemCount else mItemListAdapter.itemCount} items")
+                        .setPositiveButton("OK") { _, _ -> }
+                        .create()
+                        .show()
+                }
+            }
+            drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -183,16 +235,13 @@ class MainActivity : AppCompatActivity(), Callbacks,
 
         // onEmpty and onNotEmpty is assigned here because
         // menu needs to be inflated before assigning
-        // as we want to toggle visibility pick random option
         (recyclerview as RecyclerViewPlus?)?.onEmpty = {
             emptyIndicatorView?.visibility = View.VISIBLE
-            binding.toolbar.menu.findItem(R.id.action_pick_random)?.isVisible = false
             binding.toolbar.menu.findItem(R.id.action_count_items)?.isVisible = false
             binding.toolbar.menu.findItem(R.id.action_shuffle)?.isVisible = false
         }
         (recyclerview as RecyclerViewPlus?)?.onNotEmpty = {
             emptyIndicatorView?.visibility = View.GONE
-            binding.toolbar.menu.findItem(R.id.action_pick_random)?.isVisible = true
             binding.toolbar.menu.findItem(R.id.action_count_items)?.isVisible = true
             binding.toolbar.menu.findItem(R.id.action_shuffle)?.isVisible = true
         }
@@ -293,48 +342,6 @@ class MainActivity : AppCompatActivity(), Callbacks,
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                return true
-            }
-            R.id.action_quit -> {
-                finishAffinity()
-                exitProcess(0)
-            }
-            R.id.action_refresh -> {
-                if (mIsShowingDeviceList) refreshDevices() else refreshCurrent()
-                return true
-            }
-            R.id.action_pick_random -> {
-                return if (mIsShowingDeviceList) {
-                    if (mDeviceListAdapter.customListFilterList.isNotEmpty()) onLongClickCustomListItem(
-                        mDeviceListAdapter.customListFilterList.random()
-                    ) else true
-                } else {
-                    if (mItemListAdapter.customListFilterList.isNotEmpty()) onLongClickCustomListItem(
-                        mItemListAdapter.customListFilterList.random()
-                    ) else true
-                }
-            }
-            R.id.action_shuffle -> {
-                if (mIsShowingDeviceList) {
-                    mDeviceListAdapter.customListFilterList.shuffle()
-                    mDeviceListAdapter.notifyItemRangeRemoved(0, mDeviceList.size)
-                } else {
-                    mItemListAdapter.customListFilterList.shuffle()
-                    mItemListAdapter.notifyItemRangeRemoved(0, mItemList.size)
-                }
-                return true
-            }
-            R.id.action_count_items -> {
-                AlertDialog.Builder(this)
-                    .setTitle("Item Count")
-                    .setMessage("There are total ${if (mIsShowingDeviceList) mDeviceListAdapter.itemCount else mItemListAdapter.itemCount} items")
-                    .setPositiveButton("OK") { _, _ -> }
-                    .create()
-                    .show()
-                return true
-            }
             R.id.action_go_up -> {
                 if (!(binding.toolbar.menu.findItem(R.id.action_search).actionView as SearchView).isIconified) binding.toolbar.collapseActionView()
                 if (!mIsShowingDeviceList) onBackPressed()
@@ -384,7 +391,11 @@ class MainActivity : AppCompatActivity(), Callbacks,
     }
 
     override fun onBackPressed() {
-        if (goBack()) super.onBackPressed()
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            if (goBack()) super.onBackPressed()
+        }
     }
 
     private fun goBack(): Boolean {

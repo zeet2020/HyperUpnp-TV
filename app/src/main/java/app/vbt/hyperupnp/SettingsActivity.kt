@@ -25,6 +25,33 @@ class SettingsActivity : AppCompatActivity() {
     class SettingsFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
+            val playerPref = findPreference<androidx.preference.ListPreference>("settings_choose_player")
+            playerPref?.let { setupPlayerList(it) }
+        }
+
+        private fun setupPlayerList(preference: androidx.preference.ListPreference) {
+            val pm = requireContext().packageManager
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
+            intent.type = "video/*"
+            val resolveInfos = pm.queryIntentActivities(intent, 0)
+
+            val entries = mutableListOf<CharSequence>("Open/Stream the File")
+            val entryValues = mutableListOf<CharSequence>("try_to_open")
+
+            for (resolveInfo in resolveInfos) {
+                val appName = resolveInfo.loadLabel(pm)
+                val packageName = resolveInfo.activityInfo.packageName
+                val activityName = resolveInfo.activityInfo.name
+                val componentName = android.content.ComponentName(packageName, activityName).flattenToString()
+                
+                // Avoid duplicates if multiple activities from same app or if we want to filter
+                 entries.add("Stream in $appName")
+                 entryValues.add(componentName)
+            }
+
+            preference.entries = entries.toTypedArray()
+            preference.entryValues = entryValues.toTypedArray()
         }
     }
 }

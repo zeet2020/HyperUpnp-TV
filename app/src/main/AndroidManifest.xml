@@ -8,8 +8,23 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.touchscreen"
+        android:required="false" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
+        android:banner="@drawable/banner"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -38,7 +53,9 @@
             android:label="@string/title_activity_settings"
             android:parentActivityName="app.vbt.hyperupnp.MainActivity" />
 
-        <service android:name="app.vbt.hyperupnp.androidupnp.AndroidUpnpServiceImpl" />
+        <service
+            android:name="app.vbt.hyperupnp.androidupnp.AndroidUpnpServiceImpl"
+            android:exported="false" />
     </application>
 
 </manifest>

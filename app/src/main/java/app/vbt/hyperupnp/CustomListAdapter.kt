@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 import app.vbt.hyperupnp.models.CustomListItem
+import app.vbt.hyperupnp.models.DeviceModel
 import coil.load
 import java.util.*
 
@@ -64,7 +65,18 @@ class CustomListAdapter(
             error(holder.entry.icon)
         }
 
+        // Unified Layout for ALL items (Devices, Folders, Files)
         holder.imageView.visibility = View.VISIBLE
+        holder.imageView.setPadding(50, 50, 50, 50)
+        
+        val params = holder.containerView.layoutParams as RelativeLayout.LayoutParams
+        params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+        params.addRule(RelativeLayout.CENTER_IN_PARENT)
+        holder.containerView.layoutParams = params
+        
+        val displayMetrics = holder.itemView.context.resources.displayMetrics
+        val height = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 100f, displayMetrics).toInt()
+        holder.itemView.layoutParams.height = height
         holder.containerView.setPadding(
             0,
             holder.containerView.paddingTop,

@@ -1,6 +1,7 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Base.Theme.Hyperupnp" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Hyperupnp" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/background_dark</item>
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>

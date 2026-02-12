@@ -26,7 +26,7 @@ public class ItemModel extends CustomListItem {
     private final DIDLObject item;
 
     public ItemModel(Context ctx, int icon, Service service, DIDLObject item) {
-        super(icon);
+        super(item instanceof Container ? icon : R.drawable.ic_video_file);
 
         this.ctx = ctx;
         this.service = service;
@@ -43,7 +43,6 @@ public class ItemModel extends CustomListItem {
             return "N/A";
         return resource.getValue();
     }
-
 
     public Item getItem() {
         if (isContainer())
@@ -67,23 +66,19 @@ public class ItemModel extends CustomListItem {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uri, "video/*|audio/*|image/*");
             intent.putExtra("title", this.getTitle());
+            intent.putExtra("title", this.getTitle());
             scp = prefs.getString("settings_choose_player", "try_to_open");
-            if (scp.equals("mpv")) {
-                intent.setComponent(new ComponentName("is.xyz.mpv", "is.xyz.mpv.MPVActivity"));
-            } else if (scp.equals("vlc")) {
-                intent.setComponent(new ComponentName("org.videolan.vlc", "org.videolan.vlc.gui.video.VideoPlayerActivity"));
+            if (!scp.equals("try_to_open")) {
+                ComponentName cn = ComponentName.unflattenFromString(scp);
+                if (cn != null) {
+                    intent.setComponent(cn);
+                }
             }
             ctx.startActivity(intent);
         } catch (NullPointerException ex) {
             Toast.makeText(ctx, R.string.info_could_not_start_activity, Toast.LENGTH_SHORT).show();
         } catch (ActivityNotFoundException ex) {
-            if (scp.equals("mpv")) {
-                Toast.makeText(ctx, R.string.no_mpv_handler, Toast.LENGTH_SHORT).show();
-            } else if (scp.equals("vlc")) {
-                Toast.makeText(ctx, R.string.no_vlc_handler, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(ctx, R.string.info_no_handler, Toast.LENGTH_SHORT).show();
-            }
+            Toast.makeText(ctx, R.string.info_no_handler, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -140,7 +135,7 @@ public class ItemModel extends CustomListItem {
 
             String creator = item.getCreator();
             if (creator == null)
-                return ctx.getString(R.string.info_file);
+                return ""; // Removed generic "File" text
 
             if (creator.startsWith("Unknown"))
                 return null;

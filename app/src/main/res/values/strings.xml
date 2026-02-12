@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Hyper UPnP</string>
+    <string name="app_name">Hyperupnp TV</string>
     <string name="action_settings">Settings</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_search">Search</string>
@@ -30,9 +30,10 @@
     <string name="no_vlc_handler">VLC Application Not installed</string>
     <string name="placeholder">Placeholder</string>
     <string name="title_grid_columns">Grid Columns</string>
-    <string name="action_pick_random">Pick Random</string>
     <string name="looks_empty">Looks Empty!</string>
     <string name="device_empty">No UPnP Devices Discovered in the Local Network!</string>
     <string name="action_count_items">Count Items</string>
     <string name="action_shuffle">Shuffle Items</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
 </resources>
