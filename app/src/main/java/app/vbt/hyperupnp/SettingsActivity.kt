@@ -32,22 +32,32 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun setupPlayerList(preference: androidx.preference.ListPreference) {
             val pm = requireContext().packageManager
-            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
-            intent.type = "video/*"
-            val resolveInfos = pm.queryIntentActivities(intent, 0)
+            // 1. Check for apps that handle generic video type
+            val intentType = android.content.Intent(android.content.Intent.ACTION_VIEW)
+            intentType.setDataAndType(android.net.Uri.parse("content://dummy.mp4"), "video/*")
+            val resolveInfosType = pm.queryIntentActivities(intentType, 0)
+
+            // 2. Check for apps that strictly handle file scheme (common for some players)
+            val intentFile = android.content.Intent(android.content.Intent.ACTION_VIEW)
+            intentFile.setDataAndType(android.net.Uri.parse("file:///dummy.mp4"), "video/*")
+            val resolveInfosFile = pm.queryIntentActivities(intentFile, 0)
+
+            // 3. Combine and Deduplicate
+            val allResolves = (resolveInfosType + resolveInfosFile).distinctBy {
+                it.activityInfo.packageName
+            }
 
             val entries = mutableListOf<CharSequence>("Open/Stream the File")
             val entryValues = mutableListOf<CharSequence>("try_to_open")
 
-            for (resolveInfo in resolveInfos) {
+            for (resolveInfo in allResolves) {
                 val appName = resolveInfo.loadLabel(pm)
                 val packageName = resolveInfo.activityInfo.packageName
                 val activityName = resolveInfo.activityInfo.name
                 val componentName = android.content.ComponentName(packageName, activityName).flattenToString()
-                
-                // Avoid duplicates if multiple activities from same app or if we want to filter
-                 entries.add("Stream in $appName")
-                 entryValues.add(componentName)
+
+                entries.add("Stream in $appName")
+                entryValues.add(componentName)
             }
 
             preference.entries = entries.toTypedArray()

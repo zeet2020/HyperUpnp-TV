@@ -31,3 +31,33 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLParameters
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
+
+# --- Cling / UPnP / Jetty Rules ---
+-dontwarn org.fourthline.cling.**
+-dontwarn org.eclipse.jetty.**
+-dontwarn javax.servlet.**
+-dontwarn javax.xml.**
+-dontwarn org.w3c.dom.**
+-dontwarn org.xml.sax.**
+
+# Keep Cling classes (reflection used heavily)
+-keep class org.fourthline.cling.** { *; }
+-keep class app.vbt.hyperupnp.upnp.** { *; }
+
+# Keep Jetty classes (used by Cling for HTTP)
+-keep class org.eclipse.jetty.** { *; }
+
+# Keep standard javax interfaces used by Cling/Jetty
+-keep interface javax.servlet.** { *; }
+-keep class javax.servlet.** { *; }
+-keep class javax.xml.** { *; }
+
+# Keep Android XML/DOM wrappers if used
+-keep class org.w3c.dom.** { *; }
+-keep class org.xml.sax.** { *; }
+
+# Keep local UPnP Android service implementation
+-keep class app.vbt.hyperupnp.androidupnp.** { *; }
+
+# Keep Models that might be serialized/reflected
+-keep class app.vbt.hyperupnp.models.** { *; }

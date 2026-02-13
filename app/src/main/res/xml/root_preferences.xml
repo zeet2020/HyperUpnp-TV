@@ -3,12 +3,12 @@
 
     <PreferenceCategory app:title="@string/settings_title_grid">
         <SeekBarPreference
-            android:defaultValue="2"
+            android:defaultValue="4"
             android:max="10"
-            app:defaultValue="2"
+            app:defaultValue="4"
             app:icon="@drawable/ic_icon_grid"
             app:key="settings_grid_count"
-            app:min="1"
+            app:min="4"
             app:showSeekBarValue="true"
             app:title="@string/title_grid_columns" />
     </PreferenceCategory>

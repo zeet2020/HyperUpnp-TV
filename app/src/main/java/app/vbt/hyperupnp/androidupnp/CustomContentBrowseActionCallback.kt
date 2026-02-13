@@ -66,12 +66,24 @@ class CustomContentBrowseActionCallback(
     }
 
     override fun updateStatus(status: Status) {}
-    override fun failure(invocation: ActionInvocation<*>?, response: UpnpResponse, s: String) {
+    override fun failure(invocation: ActionInvocation<*>?, response: UpnpResponse?, s: String) {
+        // Log the full error for debugging (Release build crash investigation)
+        android.util.Log.e("HyperUPnP", "Browse Action Failed: $s", invocation?.failure)
+
+        var finalMessage = s
+        if (invocation?.failure != null) {
+             finalMessage += "\nCause: ${invocation.failure.message}"
+             // Dig for root cause if available
+             if (invocation.failure.cause != null) {
+                 finalMessage += "\nRoot: ${invocation.failure.cause!!.message}"
+             }
+        }
+        
         mCallbacks?.itemError(
             createDefaultFailureMessage(
                 invocation,
                 response
-            )
+            ) + "\n\nDetails: $finalMessage"
         )
     }
 

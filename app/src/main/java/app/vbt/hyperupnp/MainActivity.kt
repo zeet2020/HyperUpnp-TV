@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity(), Callbacks,
         emptyIndicatorView = findViewById(R.id.looksempty)
         recyclerview?.layoutManager = GridLayoutManager(
             this,
-            PreferenceManager.getDefaultSharedPreferences(this).getInt("settings_grid_count", 6)
+            PreferenceManager.getDefaultSharedPreferences(this).getInt("settings_grid_count", 4)
         )
         mDeviceListAdapter = CustomListAdapter(mDeviceList,
             { c: CustomListItem -> navigateTo(c) }) { c: CustomListItem ->
