@@ -1,15 +1,8 @@
 package app.vbt.hyperupnp.models;
 
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.webkit.MimeTypeMap;
-import android.widget.Toast;
-
-import androidx.preference.PreferenceManager;
 
 import java.util.List;
 
@@ -26,7 +19,7 @@ public class ItemModel extends CustomListItem {
     private final DIDLObject item;
 
     public ItemModel(Context ctx, int icon, Service service, DIDLObject item) {
-        super(item instanceof Container ? icon : R.drawable.ic_video_file);
+        super(item instanceof Container ? R.drawable.ic_folder : R.drawable.ic_play_circle);
 
         this.ctx = ctx;
         this.service = service;
@@ -56,30 +49,6 @@ public class ItemModel extends CustomListItem {
             return null;
 
         return (Container) item;
-    }
-
-    public void Play() {
-        String scp = "";
-        try {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
-            Uri uri = Uri.parse(this.getUrl());
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uri, "video/*|audio/*|image/*");
-            intent.putExtra("title", this.getTitle());
-            intent.putExtra("title", this.getTitle());
-            scp = prefs.getString("settings_choose_player", "try_to_open");
-            if (!scp.equals("try_to_open")) {
-                ComponentName cn = ComponentName.unflattenFromString(scp);
-                if (cn != null) {
-                    intent.setComponent(cn);
-                }
-            }
-            ctx.startActivity(intent);
-        } catch (NullPointerException ex) {
-            Toast.makeText(ctx, R.string.info_could_not_start_activity, Toast.LENGTH_SHORT).show();
-        } catch (ActivityNotFoundException ex) {
-            Toast.makeText(ctx, R.string.info_no_handler, Toast.LENGTH_SHORT).show();
-        }
     }
 
     public Service getService() {

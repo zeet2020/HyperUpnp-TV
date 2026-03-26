@@ -20,44 +20,47 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-# Please add these rules to your existing keep rules in order to suppress warnings.
-# This is generated automatically by the Android Gradle plugin.
--dontwarn org.bouncycastle.jsse.BCSSLParameters
--dontwarn org.bouncycastle.jsse.BCSSLSocket
--dontwarn org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
--dontwarn org.conscrypt.Conscrypt$Version
--dontwarn org.conscrypt.Conscrypt
--dontwarn org.conscrypt.ConscryptHostnameVerifier
--dontwarn org.openjsse.javax.net.ssl.SSLParameters
--dontwarn org.openjsse.javax.net.ssl.SSLSocket
--dontwarn org.openjsse.net.ssl.OpenJSSE
+# --- Suppress warnings for optional/unused dependencies ---
+-dontwarn org.bouncycastle.jsse.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
 
-# --- Cling / UPnP / Jetty Rules ---
--dontwarn org.fourthline.cling.**
+# --- Cling UPnP (uses reflection for XML binding, SOAP actions, service types) ---
+# Keep annotated and reflected classes in Cling's model layer
+-keep class app.vbt.hyperupnp.upnp.cling.model.** { *; }
+-keep class app.vbt.hyperupnp.upnp.cling.support.model.** { *; }
+-keep class app.vbt.hyperupnp.upnp.cling.binding.** { *; }
+-keep class app.vbt.hyperupnp.upnp.cling.transport.** { *; }
+
+# Keep Cling service types (instantiated by reflection)
+-keep class app.vbt.hyperupnp.upnp.cling.registry.** { *; }
+-keep class app.vbt.hyperupnp.upnp.cling.controlpoint.** { *; }
+-keep class app.vbt.hyperupnp.upnp.cling.protocol.** { *; }
+
+# Keep Seamless XML/HTTP utilities used by Cling
+-keep class app.vbt.hyperupnp.upnp.seamless.xml.** { *; }
+-keep class app.vbt.hyperupnp.upnp.seamless.http.** { *; }
+
+# --- Jetty (used by Cling for HTTP transport) ---
 -dontwarn org.eclipse.jetty.**
+-keep class org.eclipse.jetty.server.** { *; }
+-keep class org.eclipse.jetty.servlet.** { *; }
+-keep class org.eclipse.jetty.client.** { *; }
+-keep class org.eclipse.jetty.util.thread.** { *; }
+-keep class org.eclipse.jetty.http.** { *; }
+-keep class org.eclipse.jetty.io.** { *; }
+
+# --- javax.servlet (required by Jetty) ---
 -dontwarn javax.servlet.**
+-keep class javax.servlet.http.HttpServlet { *; }
+-keep class javax.servlet.http.HttpServletRequest { *; }
+-keep class javax.servlet.http.HttpServletResponse { *; }
+-keep interface javax.servlet.Servlet { *; }
+
+# --- Android UPnP service (bound service, instantiated by framework) ---
+-keep class app.vbt.hyperupnp.androidupnp.AndroidUpnpServiceImpl { *; }
+
+# --- Keep standard XML classes used by Cling's XML parsing ---
 -dontwarn javax.xml.**
 -dontwarn org.w3c.dom.**
 -dontwarn org.xml.sax.**
-
-# Keep Cling classes (reflection used heavily)
--keep class org.fourthline.cling.** { *; }
--keep class app.vbt.hyperupnp.upnp.** { *; }
-
-# Keep Jetty classes (used by Cling for HTTP)
--keep class org.eclipse.jetty.** { *; }
-
-# Keep standard javax interfaces used by Cling/Jetty
--keep interface javax.servlet.** { *; }
--keep class javax.servlet.** { *; }
--keep class javax.xml.** { *; }
-
-# Keep Android XML/DOM wrappers if used
--keep class org.w3c.dom.** { *; }
--keep class org.xml.sax.** { *; }
-
-# Keep local UPnP Android service implementation
--keep class app.vbt.hyperupnp.androidupnp.** { *; }
-
-# Keep Models that might be serialized/reflected
--keep class app.vbt.hyperupnp.models.** { *; }

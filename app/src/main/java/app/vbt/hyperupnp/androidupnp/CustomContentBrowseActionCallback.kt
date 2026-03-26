@@ -15,6 +15,7 @@ import app.vbt.hyperupnp.upnp.cling.support.model.DIDLContent
 import app.vbt.hyperupnp.upnp.cling.support.model.DIDLObject
 import app.vbt.hyperupnp.upnp.cling.support.model.SortCriterion
 import app.vbt.hyperupnp.upnp.cling.support.model.item.Item
+import timber.log.Timber
 import java.net.URI
 
 class CustomContentBrowseActionCallback(
@@ -43,9 +44,6 @@ class CustomContentBrowseActionCallback(
                 item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI::class.java)
         }
         if (usableIcon != null) itemModel.iconUrl = usableIcon.toString()
-        if (item is Item) {
-            itemModel.icon = R.drawable.ic_file
-        }
         return itemModel
     }
 
@@ -68,7 +66,7 @@ class CustomContentBrowseActionCallback(
     override fun updateStatus(status: Status) {}
     override fun failure(invocation: ActionInvocation<*>?, response: UpnpResponse?, s: String) {
         // Log the full error for debugging (Release build crash investigation)
-        android.util.Log.e("HyperUPnP", "Browse Action Failed: $s", invocation?.failure)
+        Timber.e(invocation?.failure, "Browse Action Failed: %s", s)
 
         var finalMessage = s
         if (invocation?.failure != null) {

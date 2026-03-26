@@ -1,13 +1,14 @@
 package app.vbt.hyperupnp
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
+import android.view.SoundEffectConstants
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.*
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import app.vbt.hyperupnp.models.CustomListItem
-import app.vbt.hyperupnp.models.DeviceModel
 import coil.load
 import java.util.*
 
@@ -19,7 +20,7 @@ class CustomListAdapter(
 ) : RecyclerView.Adapter<CustomListAdapter.ViewHolder>(),
     Filterable {
 
-
+    var isListView: Boolean = false
     var customListFilterList = ArrayList<CustomListItem>()
 
     init {
@@ -41,6 +42,20 @@ class CustomListAdapter(
             ItemView.setOnLongClickListener {
                 onItemLongClick(entry)
             }
+            ItemView.setOnFocusChangeListener { view, hasFocus ->
+                val scale = if (hasFocus) 1.08f else 1.0f
+                val elevation = if (hasFocus) 16f else 8f
+                view.animate()
+                    .scaleX(scale)
+                    .scaleY(scale)
+                    .z(elevation)
+                    .setDuration(150)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
+                if (hasFocus) {
+                    view.playSoundEffect(SoundEffectConstants.NAVIGATION_UP)
+                }
+            }
         }
 
         var titleView: TextView = ItemView.findViewById(R.id.title)
@@ -51,8 +66,13 @@ class CustomListAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.hypergrids, parent, false)
+        val layoutRes = if (isListView) R.layout.hyperlist else R.layout.hypergrids
+        val view = LayoutInflater.from(parent.context).inflate(layoutRes, parent, false)
         return ViewHolder(view, onItemClick, onItemLongClick)
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return if (isListView) 1 else 0
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -65,26 +85,29 @@ class CustomListAdapter(
             error(holder.entry.icon)
         }
 
-        // Unified Layout for ALL items (Devices, Folders, Files)
         holder.imageView.visibility = View.VISIBLE
-        holder.imageView.setPadding(50, 50, 50, 50)
-        
-        val params = holder.containerView.layoutParams as RelativeLayout.LayoutParams
-        params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-        params.addRule(RelativeLayout.CENTER_IN_PARENT)
-        holder.containerView.layoutParams = params
-        
-        val displayMetrics = holder.itemView.context.resources.displayMetrics
-        val height = android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 100f, displayMetrics).toInt()
-        holder.itemView.layoutParams.height = height
-        holder.containerView.setPadding(
-            0,
-            holder.containerView.paddingTop,
-            holder.containerView.paddingRight,
-            holder.containerView.paddingBottom
-        )
-        holder.titleView.text = holder.entry.title
 
+        if (!isListView) {
+            holder.imageView.setPadding(50, 50, 50, 50)
+
+            val params = holder.containerView.layoutParams as RelativeLayout.LayoutParams
+            params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
+            params.addRule(RelativeLayout.CENTER_IN_PARENT)
+            holder.containerView.layoutParams = params
+
+            val displayMetrics = holder.itemView.context.resources.displayMetrics
+            val height = android.util.TypedValue.applyDimension(
+                android.util.TypedValue.COMPLEX_UNIT_DIP, 160f, displayMetrics
+            ).toInt()
+            holder.itemView.layoutParams.height = height
+            holder.containerView.setPadding(
+                0,
+                holder.containerView.paddingTop,
+                holder.containerView.paddingRight,
+                holder.containerView.paddingBottom
+            )
+        }
+        holder.titleView.text = holder.entry.title
 
         val description = holder.entry.description
         if (description == null) holder.descriptionView.visibility = View.GONE
@@ -99,6 +122,18 @@ class CustomListAdapter(
             holder.description2View.visibility = View.VISIBLE
             holder.description2View.text = description2
         }
+
+        holder.itemView.contentDescription = buildString {
+            append(holder.entry.title)
+            if (description != null) {
+                append(", ")
+                append(description)
+            }
+            if (description2 != null) {
+                append(", ")
+                append(description2)
+            }
+        }
     }
 
     override fun getItemCount(): Int = customListFilterList.size
@@ -107,7 +142,7 @@ class CustomListAdapter(
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
                 val charSearch = constraint.toString()
-                customListFilterList = if (charSearch.isEmpty()) {
+                val newFilteredList = if (charSearch.isEmpty()) {
                     customListItems
                 } else {
                     val resultList = ArrayList<CustomListItem>()
@@ -121,17 +156,39 @@ class CustomListAdapter(
                     resultList
                 }
                 val filterResults = FilterResults()
-                filterResults.values = customListFilterList
+                filterResults.values = newFilteredList
                 return filterResults
             }
 
-            @SuppressLint("NotifyDataSetChanged")
             @Suppress("UNCHECKED_CAST")
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                customListFilterList = results?.values as ArrayList<CustomListItem>
-                notifyDataSetChanged()
+                val newList = results?.values as ArrayList<CustomListItem>
+                val diffResult = DiffUtil.calculateDiff(CustomListDiffCallback(customListFilterList, newList))
+                customListFilterList = newList
+                diffResult.dispatchUpdatesTo(this@CustomListAdapter)
             }
         }
     }
 
+    private class CustomListDiffCallback(
+        private val oldList: List<CustomListItem>,
+        private val newList: List<CustomListItem>
+    ) : DiffUtil.Callback() {
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            val oldItem = oldList[oldItemPosition]
+            val newItem = newList[newItemPosition]
+            return oldItem.id == newItem.id && oldItem.title == newItem.title
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            val oldItem = oldList[oldItemPosition]
+            val newItem = newList[newItemPosition]
+            return oldItem.title == newItem.title
+                    && oldItem.description == newItem.description
+                    && oldItem.iconUrl == newItem.iconUrl
+        }
+    }
 }

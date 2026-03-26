@@ -36,4 +36,10 @@
     <string name="action_shuffle">Shuffle Items</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_menu">Menu</string>
+    <string name="action_home">Home</string>
+    <string name="action_toggle_view">Toggle View</string>
+    <string name="loading_content">Loading content</string>
+    <string name="cd_device_item">%1$s, %2$s</string>
+    <string name="cd_media_item">%1$s, %2$s</string>
 </resources>
