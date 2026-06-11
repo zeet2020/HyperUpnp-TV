@@ -4,6 +4,8 @@ on: push
 
 jobs:
   build:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -22,8 +24,9 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: app/build/outputs/apk/release/*.apk
+      - name: Publish Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh config set prompt disabled
+          gh release create $(date +%s) -p app/build/outputs/apk/release/*.apk
