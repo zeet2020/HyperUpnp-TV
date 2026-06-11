@@ -18,10 +18,11 @@ public class ItemModel extends CustomListItem {
     private final Service service;
     private final DIDLObject item;
 
-    public ItemModel(Context ctx, int icon, Service service, DIDLObject item) {
+    public ItemModel(Context ctx, Service service, DIDLObject item) {
         super(item instanceof Container ? R.drawable.ic_folder : R.drawable.ic_play_circle);
 
-        this.ctx = ctx;
+        // Application context only: instances outlive the Activity inside the ViewModel.
+        this.ctx = ctx.getApplicationContext();
         this.service = service;
         this.item = item;
     }

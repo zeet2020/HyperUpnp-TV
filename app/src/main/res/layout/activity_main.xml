@@ -18,14 +18,21 @@
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:fitsSystemWindows="true"
             android:paddingStart="16dp"
-            android:paddingEnd="32dp">
+            android:paddingEnd="32dp"
+            app:elevation="0dp">
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize" />
+                android:layout_height="?attr/actionBarSize"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                app:titleTextAppearance="@style/TextAppearance.Hyperupnp.ToolbarTitle" />
 
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -43,8 +50,14 @@
                 android:id="@+id/looksempty"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:drawablePadding="20dp"
+                android:gravity="center"
+                android:maxWidth="480dp"
                 android:text="@string/looks_empty"
+                android:textColor="@color/text_dim"
                 android:textSize="18sp"
+                app:drawableTint="@color/text_faint"
+                app:drawableTopCompat="@drawable/ic_device"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -80,10 +93,19 @@
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
+        android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        android:background="@color/sidebar_background"
         android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header"
+        app:itemHorizontalPadding="22dp"
+        app:itemIconPadding="18dp"
+        app:itemIconTint="@color/nav_item_tint"
+        app:itemShapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Hyperupnp.NavPill"
+        app:itemShapeFillColor="@color/nav_item_fill"
+        app:itemTextAppearance="@style/TextAppearance.Hyperupnp.NavItem"
+        app:itemTextColor="@color/nav_item_tint"
         app:menu="@menu/drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

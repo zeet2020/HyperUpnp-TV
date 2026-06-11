@@ -33,19 +33,8 @@
 
             <intent
                 android:data="@string/settings_about_website_url"
-                app:action="android.intent.action.VIEW" />
+                android:action="android.intent.action.VIEW" />
         </PreferenceScreen>
-
-        <PreferenceScreen
-            app:icon="@drawable/ic_icon_person"
-            app:summary="@string/settings_about_developer_name"
-            app:title="@string/settings_about_developer">
-
-            <intent
-                android:data="@string/settings_about_developer_url"
-                app:action="android.intent.action.VIEW" />
-        </PreferenceScreen>
-
 
         <PreferenceScreen
             app:icon="@drawable/ic_icon_openinnew"
@@ -54,7 +43,7 @@
 
             <intent
                 android:data="@string/settings_about_website_url"
-                app:action="android.intent.action.VIEW" />
+                android:action="android.intent.action.VIEW" />
         </PreferenceScreen>
 
     </PreferenceCategory>

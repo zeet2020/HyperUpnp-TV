@@ -3,36 +3,47 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <item
-        android:id="@+id/action_home"
-        android:icon="@drawable/ic_home"
-        android:title="@string/action_home" />
-    <item
-        android:id="@+id/action_search"
-        android:icon="@drawable/ic_action_search"
-        android:title="@string/action_search" />
-    <item
-        android:id="@+id/action_toggle_view"
-        android:icon="@drawable/ic_view_list"
-        android:title="@string/action_toggle_view" />
-    <item
-        android:id="@+id/action_refresh"
-        android:icon="@drawable/ic_action_refresh"
-        android:title="@string/action_refresh" />
-    <item
-        android:id="@+id/action_shuffle"
-        android:icon="@drawable/ic_action_shuffle"
-        android:title="@string/action_shuffle" />
-    <item
-        android:id="@+id/action_settings"
-        android:icon="@drawable/ic_settings"
-        android:title="@string/action_settings" />
-    <item
-        android:id="@+id/action_go_up"
-        android:icon="@drawable/ic_action_go_up"
-        android:title="@string/action_go_up" />
-    <item
-        android:id="@+id/action_quit"
-        android:icon="@drawable/ic_quit"
-        android:title="@string/action_quit" />
+    <!-- Drawer entries are momentary actions, never persistently selected -->
+    <group android:checkableBehavior="none">
+        <item
+            android:id="@+id/action_home"
+            android:checkable="false"
+            android:icon="@drawable/ic_home"
+            android:title="@string/action_home" />
+        <item
+            android:id="@+id/action_search"
+            android:checkable="false"
+            android:icon="@drawable/ic_action_search"
+            android:title="@string/action_search" />
+        <item
+            android:id="@+id/action_toggle_view"
+            android:checkable="false"
+            android:icon="@drawable/ic_view_list"
+            android:title="@string/action_toggle_view" />
+        <item
+            android:id="@+id/action_refresh"
+            android:checkable="false"
+            android:icon="@drawable/ic_action_refresh"
+            android:title="@string/action_refresh" />
+        <item
+            android:id="@+id/action_shuffle"
+            android:checkable="false"
+            android:icon="@drawable/ic_action_shuffle"
+            android:title="@string/action_shuffle" />
+        <item
+            android:id="@+id/action_settings"
+            android:checkable="false"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/action_settings" />
+        <item
+            android:id="@+id/action_go_up"
+            android:checkable="false"
+            android:icon="@drawable/ic_action_go_up"
+            android:title="@string/action_go_up" />
+        <item
+            android:id="@+id/action_quit"
+            android:checkable="false"
+            android:icon="@drawable/ic_quit"
+            android:title="@string/action_quit" />
+    </group>
 </menu>

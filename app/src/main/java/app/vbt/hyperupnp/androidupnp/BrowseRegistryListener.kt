@@ -1,6 +1,5 @@
 package app.vbt.hyperupnp.androidupnp
 
-import android.content.Context
 import app.vbt.hyperupnp.R
 import app.vbt.hyperupnp.models.DeviceModel
 import app.vbt.hyperupnp.upnp.cling.model.meta.Device
@@ -10,8 +9,6 @@ import app.vbt.hyperupnp.upnp.cling.registry.DefaultRegistryListener
 import app.vbt.hyperupnp.upnp.cling.registry.Registry
 
 class BrowseRegistryListener(
-    private val ctx: Context,
-    private val mService: AndroidUpnpService?,
     private val mCallbacks: Callbacks?
 ) : DefaultRegistryListener() {
     override fun remoteDeviceDiscoveryStarted(registry: Registry?, device: RemoteDevice) {

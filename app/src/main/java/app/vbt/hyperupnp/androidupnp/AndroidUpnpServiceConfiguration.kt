@@ -22,22 +22,22 @@ import app.vbt.hyperupnp.upnp.cling.binding.xml.ServiceDescriptorBinder
 import app.vbt.hyperupnp.upnp.cling.binding.xml.UDA10ServiceDescriptorBinderSAXImpl
 import app.vbt.hyperupnp.upnp.cling.model.Namespace
 import app.vbt.hyperupnp.upnp.cling.model.ServerClientTokens
-import app.vbt.hyperupnp.upnp.cling.transport.impl.AsyncServletStreamServerConfigurationImpl
-import app.vbt.hyperupnp.upnp.cling.transport.impl.AsyncServletStreamServerImpl
 import app.vbt.hyperupnp.upnp.cling.transport.impl.RecoveringGENAEventProcessorImpl
 import app.vbt.hyperupnp.upnp.cling.transport.impl.RecoveringSOAPActionProcessorImpl
-import app.vbt.hyperupnp.upnp.cling.transport.impl.jetty.JettyServletContainer
-import app.vbt.hyperupnp.upnp.cling.transport.impl.jetty.StreamClientConfigurationImpl
-import app.vbt.hyperupnp.upnp.cling.transport.impl.jetty.StreamClientImpl
+import app.vbt.hyperupnp.upnp.cling.transport.impl.StreamClientConfigurationImpl
+import app.vbt.hyperupnp.upnp.cling.transport.impl.StreamClientImpl
+import app.vbt.hyperupnp.upnp.cling.transport.impl.StreamServerConfigurationImpl
+import app.vbt.hyperupnp.upnp.cling.transport.impl.StreamServerImpl
 import app.vbt.hyperupnp.upnp.cling.transport.spi.*
 
 /**
  * Configuration settings for deployment on Android.
  *
  *
- * This configuration utilizes the Jetty transport implementation
- * found in [app.vbt.hyperupnp.upnp.cling.transport.impl.jetty] for TCP/HTTP networking, as
- * client and server. The servlet context path for UPnP is set to `/upnp`.
+ * This configuration uses the JDK HttpURLConnection based [StreamClientImpl] for
+ * outgoing HTTP (descriptor retrieval and SOAP control). The stream server is a
+ * no-op: this app is a browse-only control point and never subscribes to GENA
+ * events, so no inbound HTTP listener is required.
  *
  *
  *
@@ -66,12 +66,10 @@ class AndroidUpnpServiceConfiguration @JvmOverloads constructor(streamListenPort
     }
 
     override fun createNamespace(): Namespace {
-        // For the Jetty server, this is the servlet context path
         return Namespace("/upnp")
     }
 
     override fun createStreamClient(): StreamClient<*> {
-        // Use Jetty
         return StreamClientImpl(
             object : StreamClientConfigurationImpl(
                 syncProtocolExecutorService
@@ -90,12 +88,9 @@ class AndroidUpnpServiceConfiguration @JvmOverloads constructor(streamListenPort
     }
 
     override fun createStreamServer(networkAddressFactory: NetworkAddressFactory): StreamServer<*> {
-        // Use Jetty, start/stop a new shared instance of JettyServletContainer
-        return AsyncServletStreamServerImpl(
-            AsyncServletStreamServerConfigurationImpl(
-                JettyServletContainer.INSTANCE,
-                networkAddressFactory.streamListenPort
-            )
+        // No-op server: browse-only control point, no GENA subscriptions or local devices
+        return StreamServerImpl(
+            StreamServerConfigurationImpl(networkAddressFactory.streamListenPort)
         )
     }
 

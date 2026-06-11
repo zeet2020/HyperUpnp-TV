@@ -1,7 +1,6 @@
 package app.vbt.hyperupnp.androidupnp
 
 import android.content.Context
-import app.vbt.hyperupnp.R
 import app.vbt.hyperupnp.models.ItemModel
 import app.vbt.hyperupnp.upnp.cling.model.action.ActionException
 import app.vbt.hyperupnp.upnp.cling.model.action.ActionInvocation
@@ -34,10 +33,7 @@ class CustomContentBrowseActionCallback(
         SortCriterion(true, "dc:title")
     ) {
     private fun createItemModel(item: DIDLObject): ItemModel? {
-        val itemModel = ItemModel(
-            context,
-            R.drawable.ic_folder, service, item
-        )
+        val itemModel = ItemModel(context, service, item)
         var usableIcon: URI? = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ICON::class.java)
         if (usableIcon == null || usableIcon.toString().isEmpty()) {
             usableIcon =
@@ -59,7 +55,11 @@ class CustomContentBrowseActionCallback(
                 ErrorCode.ACTION_FAILED,
                 "Can't create list children: $ex", ex
             )
-            failure(actionInvocation, UpnpResponse(UpnpResponse.Status.BAD_REQUEST), ex.message!!)
+            failure(
+                actionInvocation,
+                UpnpResponse(UpnpResponse.Status.BAD_REQUEST),
+                ex.message ?: ex.toString()
+            )
         }
     }
 

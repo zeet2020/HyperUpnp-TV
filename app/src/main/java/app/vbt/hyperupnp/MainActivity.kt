@@ -9,13 +9,17 @@ import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.webkit.MimeTypeMap
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.WindowCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -30,11 +34,11 @@ import app.vbt.hyperupnp.models.CustomListItem
 import app.vbt.hyperupnp.models.DeviceModel
 import app.vbt.hyperupnp.models.ItemModel
 import app.vbt.hyperupnp.upnp.cling.model.meta.Service
-import com.google.android.material.color.DynamicColors
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.Locale
 import kotlin.system.exitProcess
 
 
@@ -51,7 +55,7 @@ class MainActivity : AppCompatActivity(), Callbacks,
     private var isListView: Boolean = false
     private var mService: AndroidUpnpService? = null
 
-    private val mListener: BrowseRegistryListener = BrowseRegistryListener(this, mService, this)
+    private val mListener: BrowseRegistryListener = BrowseRegistryListener(this)
 
     private lateinit var mDeviceListAdapter: CustomListAdapter
     private lateinit var mItemListAdapter: CustomListAdapter
@@ -77,12 +81,10 @@ class MainActivity : AppCompatActivity(), Callbacks,
                     }
                     WifiManager.WIFI_STATE_DISABLED -> {
                         Timber.d("WiFi disabled, clearing lists")
-                        val mdlsize = viewModel.deviceList.size
-                        val milsize = viewModel.itemList.size
                         viewModel.deviceList.clear()
                         viewModel.itemList.clear()
-                        mDeviceListAdapter.notifyItemRangeRemoved(0, mdlsize)
-                        mItemListAdapter.notifyItemRangeRemoved(0, milsize)
+                        mDeviceListAdapter.refreshList()
+                        mItemListAdapter.refreshList()
                     }
                     WifiManager.WIFI_STATE_UNKNOWN -> {
                         refreshDevices()
@@ -114,8 +116,6 @@ class MainActivity : AppCompatActivity(), Callbacks,
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
-        DynamicColors.applyToActivityIfAvailable(this)
-        DynamicColors.applyToActivitiesIfAvailable(application)
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
@@ -166,6 +166,10 @@ class MainActivity : AppCompatActivity(), Callbacks,
             override fun onDrawerOpened(drawerView: View) {
                 navView.requestFocus()
             }
+
+            override fun onDrawerClosed(drawerView: View) {
+                restoreGridFocus()
+            }
         })
 
         navView.setNavigationItemSelectedListener { item ->
@@ -173,9 +177,8 @@ class MainActivity : AppCompatActivity(), Callbacks,
                 R.id.action_home -> {
                     viewModel.folders.clear()
                     viewModel.currentDevice = null
-                    val milsize = viewModel.itemList.size
                     viewModel.itemList.clear()
-                    mItemListAdapter.notifyItemRangeRemoved(0, milsize)
+                    mItemListAdapter.refreshList()
                     viewModel.setShowingDeviceList(true)
                     onDisplayDevices()
                     refreshDevices()
@@ -189,20 +192,20 @@ class MainActivity : AppCompatActivity(), Callbacks,
                 R.id.action_refresh -> {
                     if (viewModel.getShowingDeviceList()) refreshDevices() else refreshCurrent()
                 }
-R.id.action_shuffle -> {
+                R.id.action_shuffle -> {
                     if (viewModel.getShowingDeviceList()) {
-                        mDeviceListAdapter.customListFilterList.shuffle()
-                        mDeviceListAdapter.notifyItemRangeRemoved(0, viewModel.deviceList.size)
+                        viewModel.deviceList.shuffle()
+                        mDeviceListAdapter.refreshList()
                     } else {
-                        mItemListAdapter.customListFilterList.shuffle()
-                        mItemListAdapter.notifyItemRangeRemoved(0, viewModel.itemList.size)
+                        viewModel.itemList.shuffle()
+                        mItemListAdapter.refreshList()
                     }
                 }
                 R.id.action_settings -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
                 }
                 R.id.action_go_up -> {
-                    if (!viewModel.getShowingDeviceList()) onBackPressed()
+                    if (!viewModel.getShowingDeviceList()) onBackPressedDispatcher.onBackPressed()
                     if (viewModel.getShowingDeviceList()) refreshDevices()
                 }
                 R.id.action_quit -> {
@@ -214,12 +217,11 @@ R.id.action_shuffle -> {
             true
         }
 
-        refreshDevices()
-        refreshCurrent()
+        onBackPressedDispatcher.addCallback(this, backCallback)
+
         prefs.registerOnSharedPreferenceChangeListener(this)
-        val filter = IntentFilter()
-        filter.addAction("android.net.wifi.WIFI_STATE_CHANGED")
-        registerReceiver(receiver, filter)
+        val filter = IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION)
+        ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         bindServiceConnection()
     }
 
@@ -230,6 +232,20 @@ R.id.action_shuffle -> {
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem.actionView as SearchView
         searchView.queryHint = getString(R.string.search_hint)
+
+        // SearchView's internal buttons use borderless ripples that draw outside
+        // their bounds; without this the focus circle on the X button gets clipped
+        disableClipping(searchView)
+
+        // D-pad focus does not open the IME by itself on TV: request it explicitly
+        searchView.setOnQueryTextFocusChangeListener { v, hasFocus ->
+            if (hasFocus) {
+                v.post {
+                    val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.showSoftInput(v.findFocus() ?: v, 0)
+                }
+            }
+        }
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
@@ -273,10 +289,19 @@ R.id.action_shuffle -> {
         return true
     }
 
+    private fun disableClipping(view: View) {
+        if (view is android.view.ViewGroup) {
+            view.clipChildren = false
+            view.clipToPadding = false
+            for (i in 0 until view.childCount) disableClipping(view.getChildAt(i))
+        }
+    }
+
     private fun openSearch() {
         val searchItem = binding.toolbar.menu.findItem(R.id.action_search) ?: return
         searchItem.isVisible = true
         searchItem.expandActionView()
+        (searchItem.actionView as? SearchView)?.requestFocus()
     }
 
     private fun updateToggleViewIcon() {
@@ -311,8 +336,33 @@ R.id.action_shuffle -> {
         mItemListAdapter.notifyDataSetChanged()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return super.onOptionsItemSelected(item)
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            when (event.keyCode) {
+                // Right from the drawer returns to the content grid
+                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                        drawerLayout.closeDrawer(GravityCompat.START)
+                        return true
+                    }
+                }
+                // Left at the leftmost item opens the drawer (TV pattern)
+                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    if (!drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                        val focused = currentFocus
+                        val rv = recyclerview
+                        if (focused != null && rv != null &&
+                            rv.findContainingItemView(focused) != null &&
+                            focused.focusSearch(View.FOCUS_LEFT) == null
+                        ) {
+                            drawerLayout.openDrawer(GravityCompat.START)
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -331,7 +381,7 @@ R.id.action_shuffle -> {
             }
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
                 if (!viewModel.getShowingDeviceList()) {
-                    onBackPressed()
+                    onBackPressedDispatcher.onBackPressed()
                     true
                 } else {
                     super.onKeyDown(keyCode, event)
@@ -360,7 +410,9 @@ R.id.action_shuffle -> {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             val uri = Uri.parse(item.url)
             val intent = Intent(Intent.ACTION_VIEW)
-            intent.setDataAndType(uri, "video/*|audio/*|image/*")
+            val ext = MimeTypeMap.getFileExtensionFromUrl(item.url).lowercase(Locale.ROOT)
+            val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "video/*"
+            intent.setDataAndType(uri, mime)
             intent.putExtra("title", item.title)
             scp = prefs.getString("settings_choose_player", "try_to_open") ?: "try_to_open"
             if (scp != "try_to_open") {
@@ -487,10 +539,9 @@ R.id.action_shuffle -> {
         }
         if (model is ItemModel) {
             if (model.isContainer) {
-    
-                if (viewModel.folders.isEmpty()) viewModel.folders.push(model) else if (viewModel.folders.peek().id !== model.id) viewModel.folders.push(
-                    model
-                )
+                if (viewModel.folders.isEmpty() || viewModel.folders.peek().id != model.id) {
+                    viewModel.folders.push(model)
+                }
                 (model.service as Service<*, *>?)?.let { service ->
                     showLoading()
                     mService?.controlPoint?.execute(
@@ -508,11 +559,16 @@ R.id.action_shuffle -> {
         }
     }
 
-    override fun onBackPressed() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START)
-        } else if (goBack()) {
-            super.onBackPressed()
+    private val backCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else if (goBack()) {
+                // Nothing left to pop: let the system handle back (finish the Activity)
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
+            }
         }
     }
 
@@ -608,9 +664,8 @@ R.id.action_shuffle -> {
     override fun onDisplayDirectories() {
         lifecycleScope.launch(Dispatchers.Main) {
             hideLoading()
-            val milsize = viewModel.itemList.size
             viewModel.itemList.clear()
-            mItemListAdapter.notifyItemRangeRemoved(0, milsize)
+            mItemListAdapter.refreshList()
             viewModel.setShowingDeviceList(false)
         }
     }
@@ -619,15 +674,29 @@ R.id.action_shuffle -> {
         lifecycleScope.launch(Dispatchers.Main) {
             hideLoading()
             viewModel.itemList.add(Item)
-            mItemListAdapter.notifyItemInserted(viewModel.itemList.size - 1)
+            mItemListAdapter.notifyItemAppended()
+            if (viewModel.itemList.size == 1) restoreGridFocus()
+        }
+    }
+
+    /**
+     * Clearing the list while navigating removes the focused card, so the system
+     * throws focus to the toolbar. Pull it back to the first card once content exists.
+     */
+    private fun restoreGridFocus() {
+        recyclerview?.post {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) return@post
+            // Only the search text field keeps focus; anything else (e.g. the
+            // hamburger button that catches focus when the list is cleared) loses it
+            if (binding.toolbar.findFocus() is android.widget.EditText) return@post
+            recyclerview?.requestFocus()
         }
     }
 
     override fun clearItems() {
         lifecycleScope.launch(Dispatchers.Main) {
-            val milsize = viewModel.itemList.size
             viewModel.itemList.clear()
-            mItemListAdapter.notifyItemRangeRemoved(0, milsize)
+            mItemListAdapter.refreshList()
         }
     }
 
@@ -635,9 +704,7 @@ R.id.action_shuffle -> {
         lifecycleScope.launch(Dispatchers.Main) {
             hideLoading()
             Timber.e("Item browsing error: %s", error)
-            val milsize = viewModel.itemList.size
             viewModel.itemList.clear()
-            mItemListAdapter.notifyItemRangeRemoved(0, milsize)
             viewModel.itemList.add(
                 CustomListItem(
                     R.drawable.ic_warning,
@@ -645,7 +712,7 @@ R.id.action_shuffle -> {
                     error
                 )
             )
-            mItemListAdapter.notifyItemInserted(viewModel.itemList.size - 1)
+            mItemListAdapter.refreshList()
         }
     }
 
@@ -653,24 +720,21 @@ R.id.action_shuffle -> {
         lifecycleScope.launch(Dispatchers.Main) {
             val position: Int = viewModel.deviceList.indexOf(device as CustomListItem)
             if (position >= 0) {
-                viewModel.deviceList.remove(device)
-                mDeviceListAdapter.notifyItemRemoved(position)
-                mDeviceListAdapter.notifyItemRangeChanged(position, viewModel.deviceList.size - position)
-                viewModel.deviceList.add(position, device)
-                mDeviceListAdapter.notifyItemInserted(position)
+                viewModel.deviceList[position] = device
             } else {
                 viewModel.deviceList.add(device)
-                mDeviceListAdapter.notifyItemInserted(viewModel.deviceList.size - 1)
+            }
+            mDeviceListAdapter.refreshList()
+            if (viewModel.deviceList.size == 1 && viewModel.getShowingDeviceList()) {
+                restoreGridFocus()
             }
         }
     }
 
     override fun rmDevice(device: DeviceModel) {
         lifecycleScope.launch(Dispatchers.Main) {
-            val position: Int = viewModel.deviceList.indexOf(device as CustomListItem)
-            viewModel.deviceList.remove(device)
-            mDeviceListAdapter.notifyItemRemoved(position)
-            mDeviceListAdapter.notifyItemRangeChanged(position, viewModel.deviceList.size - position)
+            viewModel.deviceList.remove(device as CustomListItem)
+            mDeviceListAdapter.refreshList()
         }
     }
 

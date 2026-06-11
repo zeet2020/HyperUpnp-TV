@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_dark" />
+        </shape>
+    </item>
+    <!-- Faint projector glow falling from the top of the screen -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#1A2530"
+                android:centerColor="#0E141B"
+                android:endColor="#000B0F14"
+                android:centerY="0.35"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>

@@ -41,22 +41,6 @@
 -keep class app.vbt.hyperupnp.upnp.seamless.xml.** { *; }
 -keep class app.vbt.hyperupnp.upnp.seamless.http.** { *; }
 
-# --- Jetty (used by Cling for HTTP transport) ---
--dontwarn org.eclipse.jetty.**
--keep class org.eclipse.jetty.server.** { *; }
--keep class org.eclipse.jetty.servlet.** { *; }
--keep class org.eclipse.jetty.client.** { *; }
--keep class org.eclipse.jetty.util.thread.** { *; }
--keep class org.eclipse.jetty.http.** { *; }
--keep class org.eclipse.jetty.io.** { *; }
-
-# --- javax.servlet (required by Jetty) ---
--dontwarn javax.servlet.**
--keep class javax.servlet.http.HttpServlet { *; }
--keep class javax.servlet.http.HttpServletRequest { *; }
--keep class javax.servlet.http.HttpServletResponse { *; }
--keep interface javax.servlet.Servlet { *; }
-
 # --- Android UPnP service (bound service, instantiated by framework) ---
 -keep class app.vbt.hyperupnp.androidupnp.AndroidUpnpServiceImpl { *; }
 

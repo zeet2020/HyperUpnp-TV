@@ -29,8 +29,11 @@ public class DeviceModel extends CustomListItem {
                 continue;
 
             if (icon.getWidth() >= 64 && icon.getHeight() >= 64
-                    && isUsableImageType(icon.getMimeType()))
-                return ((RemoteDevice) device).normalizeURI(icon.getUri()).toString();
+                    && isUsableImageType(icon.getMimeType())) {
+                if (device instanceof RemoteDevice)
+                    return ((RemoteDevice) device).normalizeURI(icon.getUri()).toString();
+                return icon.getUri().toString();
+            }
         }
         return null;
     }

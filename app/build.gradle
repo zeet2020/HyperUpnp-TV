@@ -4,14 +4,15 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    namespace 'app.vbt.hyperupnp'
+    compileSdk 35
 
     defaultConfig {
         applicationId "app.vbt.hyperupnp"
         minSdk 25
-        targetSdk 32
-        versionCode 4
-        versionName "0.0.4"
+        targetSdk 35
+        versionCode 5
+        versionName "0.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,40 +49,27 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
     buildFeatures {
         viewBinding true
-    }
-
-    aaptOptions {
-        cruncherEnabled = false
+        buildConfig true
     }
 }
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.4.1'
     implementation 'com.google.android.material:material:1.7.0-alpha01'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.4.2'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.4.2'
     implementation 'androidx.preference:preference:1.2.0'
     implementation 'io.coil-kt:coil:2.1.0'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    //noinspection GradleDependency
-    implementation 'org.eclipse.jetty:jetty-server:8.1.22.v20160922'
-    //noinspection GradleDependency
-    implementation 'org.eclipse.jetty:jetty-servlet:8.1.22.v20160922'
-    //noinspection GradleDependency
-    implementation 'org.eclipse.jetty:jetty-client:8.1.22.v20160922'
-    implementation 'javax.servlet:javax.servlet-api:3.1.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.1'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.4.1'

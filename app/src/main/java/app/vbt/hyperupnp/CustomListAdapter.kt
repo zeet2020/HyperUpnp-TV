@@ -21,10 +21,32 @@ class CustomListAdapter(
     Filterable {
 
     var isListView: Boolean = false
-    var customListFilterList = ArrayList<CustomListItem>()
+    var customListFilterList = ArrayList(customListItems)
+    private var lastQuery: String = ""
 
-    init {
-        customListFilterList = customListItems
+    private fun matches(item: CustomListItem, query: String): Boolean =
+        query.isEmpty() || item.title?.lowercase(Locale.ROOT)
+            ?.contains(query.lowercase(Locale.ROOT)) == true
+
+    private fun computeFilteredList(query: String): ArrayList<CustomListItem> =
+        customListItems.filterTo(ArrayList()) { matches(it, query) }
+
+    /** Re-syncs the displayed list after the source list was mutated. */
+    fun refreshList() {
+        val newList = computeFilteredList(lastQuery)
+        val diffResult =
+            DiffUtil.calculateDiff(CustomListDiffCallback(customListFilterList, newList))
+        customListFilterList = newList
+        diffResult.dispatchUpdatesTo(this)
+    }
+
+    /** Call after appending one item to the source list. */
+    fun notifyItemAppended() {
+        val item = customListItems.lastOrNull() ?: return
+        if (matches(item, lastQuery)) {
+            customListFilterList.add(item)
+            notifyItemInserted(customListFilterList.size - 1)
+        }
     }
 
     class ViewHolder(
@@ -43,14 +65,14 @@ class CustomListAdapter(
                 onItemLongClick(entry)
             }
             ItemView.setOnFocusChangeListener { view, hasFocus ->
-                val scale = if (hasFocus) 1.08f else 1.0f
-                val elevation = if (hasFocus) 16f else 8f
+                val scale = if (hasFocus) 1.06f else 1.0f
+                val elevation = if (hasFocus) 20f else 3f
                 view.animate()
                     .scaleX(scale)
                     .scaleY(scale)
                     .z(elevation)
-                    .setDuration(150)
-                    .setInterpolator(DecelerateInterpolator())
+                    .setDuration(160)
+                    .setInterpolator(DecelerateInterpolator(1.5f))
                     .start()
                 if (hasFocus) {
                     view.playSoundEffect(SoundEffectConstants.NAVIGATION_UP)
@@ -79,34 +101,25 @@ class CustomListAdapter(
         holder.titleView.isSelected = true
         holder.entry = customListFilterList[position]
 
+        // Recycled views may hold the full-bleed thumbnail state; restore the
+        // padded icon presentation before loading.
+        val density = holder.itemView.resources.displayMetrics.density
+        val iconPadding = ((if (isListView) 8 else 22) * density).toInt()
+        holder.imageView.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
+        holder.imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+
         holder.imageView.load(holder.entry.iconUrl) {
             crossfade(true)
             placeholder(holder.entry.icon)
             error(holder.entry.icon)
+            listener(onSuccess = { _, _ ->
+                // Real artwork: drop the icon inset and fill the well edge to edge
+                holder.imageView.setPadding(0, 0, 0, 0)
+                holder.imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+            })
         }
 
         holder.imageView.visibility = View.VISIBLE
-
-        if (!isListView) {
-            holder.imageView.setPadding(50, 50, 50, 50)
-
-            val params = holder.containerView.layoutParams as RelativeLayout.LayoutParams
-            params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            params.addRule(RelativeLayout.CENTER_IN_PARENT)
-            holder.containerView.layoutParams = params
-
-            val displayMetrics = holder.itemView.context.resources.displayMetrics
-            val height = android.util.TypedValue.applyDimension(
-                android.util.TypedValue.COMPLEX_UNIT_DIP, 160f, displayMetrics
-            ).toInt()
-            holder.itemView.layoutParams.height = height
-            holder.containerView.setPadding(
-                0,
-                holder.containerView.paddingTop,
-                holder.containerView.paddingRight,
-                holder.containerView.paddingBottom
-            )
-        }
         holder.titleView.text = holder.entry.title
 
         val description = holder.entry.description
@@ -141,22 +154,10 @@ class CustomListAdapter(
     override fun getFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val charSearch = constraint.toString()
-                val newFilteredList = if (charSearch.isEmpty()) {
-                    customListItems
-                } else {
-                    val resultList = ArrayList<CustomListItem>()
-                    for (row in customListItems) {
-                        if (row.title.lowercase(Locale.ROOT)
-                                .contains(charSearch.lowercase(Locale.ROOT))
-                        ) {
-                            resultList.add(row)
-                        }
-                    }
-                    resultList
-                }
+                val query = constraint?.toString() ?: ""
+                lastQuery = query
                 val filterResults = FilterResults()
-                filterResults.values = newFilteredList
+                filterResults.values = computeFilteredList(query)
                 return filterResults
             }
 

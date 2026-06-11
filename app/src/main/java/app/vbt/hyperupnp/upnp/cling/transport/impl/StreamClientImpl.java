@@ -77,21 +77,12 @@ public class StreamClientImpl implements StreamClient {
 
         if (ModelUtil.ANDROID_EMULATOR || ModelUtil.ANDROID_RUNTIME) {
             /*
-            See the fantastic PERMITTED_USER_METHODS here:
-
-            https://android.googlesource.com/platform/libcore/+/android-4.0.1_r1.2/luni/src/main/java/java/net/HttpURLConnection.java
-
-            We'd have to basically copy the whole Android code, and have a dependency on
-            libcore.*, and do much more hacking to allow more HTTP methods. This is the same
-            problem we are hacking below for the JDK but at least there we don't have a
-            dependency issue for compiling Cling. These guys all suck, there is no list
-            of "permitted" HTTP methods. HttpURLConnection and the whole stream handler
-            factory stuff is the worst Java API ever created.
+            Android's HttpURLConnection only permits the standard HTTP methods, so GENA
+            methods (SUBSCRIBE/UNSUBSCRIBE/NOTIFY) fail with ProtocolException at request
+            time. This app is a browse-only control point: descriptor retrieval (GET) and
+            SOAP control (POST) are the only outgoing requests, both permitted.
             */
-            throw new InitializationException(
-                    "This client does not work on Android. The design of HttpURLConnection is broken, we "
-                            + "can not add additional 'permitted' HTTP methods. Read the Cling manual."
-            );
+            log.info("Android runtime: GENA methods unsupported by this client, GET/POST only");
         }
 
         log.fine("Using persistent HTTP stream client connections: " + configuration.isUsePersistentConnections());

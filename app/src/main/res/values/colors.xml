@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background_dark">#FF121212</color>
-    <color name="card_default">#FF212121</color>
-    <color name="card_focused">#FF505050</color>
-    <color name="card_text_default">#FFFFFFFF</color>
-    <color name="card_text_focused">#FFFFFFFF</color>
-    <color name="sidebar_background">#FF1A1A1A</color>
-    <color name="sidebar_expanded">#FF222222</color>
+    <!-- Midnight Archive palette: deep ink blues, projector-lamp amber -->
+    <color name="background_dark">#FF0B0F14</color>
+    <color name="surface">#FF121922</color>
+    <color name="image_well">#FF0F151D</color>
+
+    <color name="card_default">#FF151D27</color>
+    <color name="card_focused">#FF1F2C3B</color>
+
+    <color name="accent">#FFFFB454</color>
+    <color name="accent_dim">#FFB87F33</color>
+    <color name="on_accent">#FF221604</color>
+
+    <color name="text_bright">#FFF2F5F8</color>
+    <color name="text_dim">#FF93A1B0</color>
+    <color name="text_faint">#FF5C6B7A</color>
+
+    <color name="sidebar_background">#FF0D131A</color>
 </resources>
