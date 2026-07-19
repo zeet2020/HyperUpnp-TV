@@ -25,6 +25,7 @@ import android.net.NetworkRequest
 import android.net.wifi.WifiManager
 import android.net.wifi.WifiManager.MulticastLock
 import android.net.wifi.WifiManager.WifiLock
+import android.os.Build
 import app.vbt.hyperupnp.upnp.cling.UpnpServiceConfiguration
 import app.vbt.hyperupnp.upnp.cling.protocol.ProtocolFactory
 import app.vbt.hyperupnp.upnp.cling.transport.Router
@@ -55,10 +56,13 @@ open class AndroidRouter(
     override fun getLockTimeoutMillis(): Int = 15000
 
     private val isWifi: Boolean
-        get() {
-            val network = connectivityManager.activeNetwork ?: return false
-            val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
-            return activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = connectivityManager.activeNetwork
+            val activeNetwork = network?.let { connectivityManager.getNetworkCapabilities(it) }
+            activeNetwork?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+        } else {
+            @Suppress("DEPRECATION")
+            connectivityManager.activeNetworkInfo?.type == ConnectivityManager.TYPE_WIFI
         }
 
     @Throws(RouterException::class)
